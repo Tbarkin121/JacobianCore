@@ -1,3 +1,6 @@
+# Custom
+out/
+.vs/
 # Prerequisites
 *.d
 
