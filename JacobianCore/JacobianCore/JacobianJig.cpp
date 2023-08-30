@@ -15,7 +15,7 @@ typedef void (*fun2)(float, float);             //void I_SetTarget(float x_targ,
 typedef void (*fun3)(void);                     //void I_Control_Update(void);
 typedef void (*fun4)(float*, float*);           //void I_Get_Pos(float x_pos[], float y_pos[]);
 
-const uint16_t number_of_segments = 5;
+const uint16_t number_of_segments = 4;
 std::chrono::time_point<std::chrono::system_clock> tstart, tend;
 std::chrono::duration<double> elapsed_seconds;
 

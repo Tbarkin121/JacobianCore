@@ -35,7 +35,7 @@ void PlanarArm::Init(uint16_t n_seg)
 	cout << device << endl;
 
 	num_segments = n_seg;
-	joint_angles = torch::rand({ num_segments }, device);
+	joint_angles = torch::ones({ num_segments }, device);
 	joint_angles.requires_grad_(true);
 	joint_lengths = torch::ones({ num_segments }, device) / num_segments;
 	x_pos = torch::zeros({ num_segments + 1 }, device);
@@ -46,6 +46,7 @@ void PlanarArm::Init(uint16_t n_seg)
 	dy = torch::tensor({ 0 }, device);
 	weights = torch::ones({ num_segments, 1 }, device);
 	weights[0] = 0.0;
+	gamma = 1.0f;
 	// Check
 	cout << "Tensor: \n" << joint_angles << endl;
 	cout << "Device: " << joint_angles.device() << endl;
@@ -64,9 +65,12 @@ void PlanarArm::forward_kinematics(void)
 	//x_pos.index({ -1 }) = pos[0];
 	//y_pos.index({ -1 }) = pos[1];
 	for (int s = 1; s <= num_segments; s++) {
+		cout <<"s" << s << endl;
 		x_pos[s] = x_pos[s - 1] + joint_lengths[s - 1] * torch::cos(torch::sum(joint_angles.slice(0, 0, s)));
 		y_pos[s] = y_pos[s - 1] + joint_lengths[s - 1] * torch::sin(torch::sum(joint_angles.slice(0, 0, s)));
 	}
+	cout << "x_pos : " << x_pos << endl;
+	cout << "y_pos : " << y_pos << endl;
 }
 
 void PlanarArm::update_angle(torch::Tensor dtheta)
@@ -94,6 +98,7 @@ void PlanarArm::compute_jacobian(void)
 	if (joint_angles.grad().defined())
 	{
 		joint_angles.mutable_grad() = torch::empty({ num_segments }, device);
+		joint_angles.mutable_grad().reset();
 	}
 
 
@@ -101,25 +106,23 @@ void PlanarArm::compute_jacobian(void)
 	dx.backward();
 
 	torch::Tensor jacobian_x = joint_angles.grad();
-
+	cout << "jac x " << jacobian_x << endl;
 	// Zero out the gradients again for the next backward pass
 	if (joint_angles.grad().defined())
 	{
 		joint_angles.mutable_grad() = torch::empty({ num_segments }, device);
+		joint_angles.mutable_grad().reset();
 	}
 
 	try {
 		dy.backward();
 	}
-	//catch (const c10::Error& e) {
-	//    std::cerr << "Error during forward pass: " << e.what() << std::endl;
-	//}
 	catch (const std::exception& e) {
 		std::cerr << "Standard exception: " << e.what() << std::endl;
 	}
 	
 	torch::Tensor jacobian_y = joint_angles.grad();
-
+	cout << "jac y " << jacobian_y << endl;
 	J = torch::cat({ jacobian_x.view({1, -1}), jacobian_y.view({1, -1}) }, 0);
 	// Check
 	//cout << "Tensor: " << J << endl;
@@ -131,15 +134,17 @@ void PlanarArm::control_update(void)
 {
 	int m = 2;
 	int n = num_segments;
-	double gamma = 1.0;
+
 
 	PlanarArm::compute_jacobian();
 
 
-
+	cout << J << endl;
 	auto JJT = torch::matmul(J, J.permute({ 1, 0 }));
+	cout << JJT << endl;
 	auto Im = torch::eye(m, torch::TensorOptions().dtype(J.dtype()).device(J.device()));
 	auto R = torch::stack({ dx, dy }).view({ -1,1 });
+	cout << R << endl;
 
 	torch::Tensor M1 = torch::linalg::solve(JJT, J, true);  // Using torch::linalg::solve's solution as the returned value
 	torch::Tensor M2 = torch::linalg::solve(JJT + gamma * gamma * Im, R, true);
@@ -157,6 +162,12 @@ void PlanarArm::set_target(float x_targ, float y_targ)
 
 	x_target = torch::tensor({ x_targ }, device);
 	y_target = torch::tensor({ y_targ }, device);
+}
+
+void PlanarArm::set_gamma(float gam)
+{
+
+	gamma = gam;
 }
 
 torch::Tensor PlanarArm::get_positions(void)

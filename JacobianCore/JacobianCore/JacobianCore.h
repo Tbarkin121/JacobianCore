@@ -7,27 +7,6 @@
 #include <torch/torch.h>
 // TODO: Reference additional headers your program requires here.
 
-//class DLLTestClass
-//{
-//
-//private:
-//	torch::Device device = torch::kCPU;
-//
-//	uint16_t m;
-//	uint16_t n;
-//
-//	torch::Tensor t1;
-//	torch::Tensor t2;
-//	float f1;
-//	float f2;
-//
-//
-//public:
-//	void Init(void);
-//
-//};
-//extern DLLTestClass myTestClass;
-
 
 class PlanarArm
 {
@@ -35,6 +14,8 @@ private:
 	torch::Device device = torch::kCPU;
 
 	uint16_t num_segments;
+
+	float gamma;
 
 	torch::Tensor joint_angles;
 	torch::Tensor joint_lengths;
@@ -60,6 +41,7 @@ public:
 	void compute_jacobian(void);
 	void control_update(void);
 	void set_target(float x_targ, float y_targ);
+	void set_gamma(float gam);
 	torch::Tensor get_positions(void);
 
 

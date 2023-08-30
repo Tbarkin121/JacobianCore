@@ -18,6 +18,7 @@ extern "C"
 	DLL_PREFIX void I_SetTarget(float x_targ, float y_targ);
 	DLL_PREFIX void I_Control_Update(void);
 	DLL_PREFIX void I_Get_Pos(float x_pos[], float y_pos[]);
+	DLL_PREFIX void I_Set_Gamma(float gam);
 
 }
 #endif

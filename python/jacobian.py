@@ -24,14 +24,14 @@ class PlanarArm:
     def __init__(self, num_segments):
         print('Init Arm')
         self.num_segments = num_segments
-        self.joint_angles = torch.rand(num_segments, requires_grad=True)
+        self.joint_angles = torch.ones(num_segments, requires_grad=True)
         self.joint_lengths =  torch.ones(num_segments, requires_grad=False)/num_segments
         self.xs = torch.zeros(num_segments+1, requires_grad=False)
         self.ys = torch.zeros(num_segments+1, requires_grad=False)
         self.x_targ=torch.tensor(-0.33, requires_grad=False)
         self.y_targ=torch.tensor(0.44, requires_grad=False)
         
-        self.weights = torch.ones([num_segments,1])
+        self.weights = torch.zeros([num_segments,1])
         self.weights[0] = 0
                 
         
@@ -53,6 +53,7 @@ class PlanarArm:
         for s in range(1, self.num_segments+1):
             self.xs[s] = self.xs[s-1] + self.joint_lengths[s-1]*torch.cos(torch.sum(self.joint_angles[0:s]))
             self.ys[s] = self.ys[s-1] + self.joint_lengths[s-1]*torch.sin(torch.sum(self.joint_angles[0:s]))
+            
                 
         
     def get_residual(self):
@@ -106,7 +107,7 @@ class PlanarArm:
     def control(self):
         m = 2
         n = self.num_segments
-        gamma = 2
+        gamma = .5
         
         self.compute_jacobian()
         
@@ -131,11 +132,11 @@ class PlanarArm:
         
         
         
-env = PlanarArm(5)
+env = PlanarArm(4)
 
 #%%
 
-for i in range(100):
+for i in range(1):
     ang = torch.tensor(i*torch.pi/180)
     # env.control(-2.0, -1.5)
     start = time.perf_counter()

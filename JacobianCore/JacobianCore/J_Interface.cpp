@@ -59,3 +59,8 @@ void I_Get_Pos(float x_pos[], float y_pos[])
 	std::copy(v_x.begin(), v_x.end(), x_pos);
 	std::copy(v_y.begin(), v_y.end(), y_pos);
 }
+
+void I_Set_Gamma(float gam)
+{
+	myTestClass.set_gamma(gam);
+}
