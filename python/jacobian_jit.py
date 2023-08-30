@@ -117,37 +117,24 @@ class PlanarArm(nn.Module):
 
     @torch.jit.export
     def control_update(self):
-        
-        self.compute_jacobian()
-        self.J_inv = torch.linalg.pinv(self.J)
-        gamma = 5
-        I = torch.eye(2)
-        self.J_inv_damped = torch.matmul(self.J.permute([1,0]), torch.linalg.inv(torch.matmul(self.J, self.J.permute([1,0])) + gamma**2*I ))
-        
-        
-        
-        # DX_d2 = torch.tensor(self.joint_angles)
-        # J_Jt = torch.matmul(self.J,self.J.permute([1,0]))
-        # JpinvDamped = torch.matmul(J.permute([1,0]),torch.linalg.solve(J_Jt + gamma2*torch.eye(m),torch.eye(m)))
-        
         m = 2
         n = 3
-        N_mat = (torch.eye(n)- torch.matmul(self.J_inv, self.J))
-        pinvL_Nm_A =  torch.linalg.lstsq(N_mat[:m-n,:m-n],N_mat[:m-n,:])[0]
-        th_r = torch.matmul(torch.matmul(N_mat[:m-n,:].permute([1,0]),pinvL_Nm_A), self.joint_angles.view(-1,1)*self.weights)
-        self.delta_theta = torch.matmul(self.J_inv_damped, torch.tensor([[self.dx], [self.dy]])) + th_r;
+        gamma = 5
         
-        # print(N_mat.shape)
-        # print(pinvL_Nm_A.shape)
-        # print(th_r.shape)
-        # print(self.delta_theta.shape)
+        self.compute_jacobian()
         
-
-        # Calculate the desired change in joint angles
-        # self.delta_theta = torch.matmul(self.J_inv, torch.tensor([self.dx, self.dy]))
-        # self.delta_theta = torch.linalg.lstsq(self.J,torch.tensor([self.dx,self.dy]))[0] 
-
-        self.update_angles(self.delta_theta.view(-1))
+        JJT = self.J * self.J.permute([1,0])
+        Im = torch.eye(m)
+        R = torch.stack((env.dx, env.dy)).view(-1,1)
+        M1 = torch.solve(JJT, J)
+        M2 = torch.solve(JJT+gamma**2*I, R)
+        In = torch.eye(n)
+        Zp = In - torch.matmul(J.permute([1,0]), M1)
+        DeltaThetaPrimary = torch.matmul(J.permute([1,0]), M2)
+        DeltaThetaSecondary = torch.matmul(Zp, self.joint_angles * self.weights)
+        DeltaTheta = DeltaThetaPrimary + DeltaThetaSecondary        
+        self.update_angles(DeltaTheta)
+        
         
     @torch.jit.export
     def target_update(self, target):
@@ -196,9 +183,9 @@ torch.jit.save(scripted_model, "PlanarArm.pt")
 #%%
 
 
-# for i in range(1000):
-#     ang = torch.tensor(i*torch.pi/180)
-#     # env.control_update(-2.0, -1.5)
-#     env.control_update()
-#     env.plot()
+for i in range(1000):
+    ang = torch.tensor(i*torch.pi/180)
+    # env.control_update(-2.0, -1.5)
+    env.control_update()
+    env.plot()
     

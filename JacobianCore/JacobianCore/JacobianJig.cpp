@@ -4,9 +4,20 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-using namespace std;
+#include <chrono>
 
-typedef void (*fun1)(void);
+using namespace std;
+using namespace std::chrono;
+
+
+typedef void (*fun1)(uint16_t);                 //void I_Init(uint16_t n_seg);
+typedef void (*fun2)(float, float);             //void I_SetTarget(float x_targ, float y_targ);
+typedef void (*fun3)(void);                     //void I_Control_Update(void);
+typedef void (*fun4)(float*, float*);           //void I_Get_Pos(float x_pos[], float y_pos[]);
+
+const uint16_t number_of_segments = 5;
+std::chrono::time_point<std::chrono::system_clock> tstart, tend;
+std::chrono::duration<double> elapsed_seconds;
 
 int main()
 {
@@ -23,17 +34,51 @@ int main()
     cout << "DLL Linked" << endl;
     cout << "Lib Address : " << hinstLib << endl;
 
+    
     if (hinstLib != NULL)
     {
 
-        fun1 I1 = (fun1)GetProcAddress(hinstLib, "Interface_1");
+        fun1 I_Init = (fun1)GetProcAddress(hinstLib, "I_Init");
+        fun2 I_SetTarget = (fun2)GetProcAddress(hinstLib, "I_SetTarget");
+        fun3 I_Control_Update = (fun3)GetProcAddress(hinstLib, "I_Control_Update");
+        fun4 I_Get_Pos = (fun4)GetProcAddress(hinstLib, "I_Get_Pos");
 
-        if (NULL != I1)
+        if (NULL != I_Init)
         {
             fRunTimeLinkSuccess = TRUE;
-            cout << "Interface_1 Function Found" << endl;
-            I1();                 
+            cout << "I_Init Function Found" << endl;
+            I_Init(number_of_segments);
         }
+        if (NULL != I_SetTarget)
+        {
+            fRunTimeLinkSuccess = TRUE;
+            cout << "I_SetTarget Function Found" << endl;
+            I_SetTarget(-0.33, 0.44);
+        }
+        if ( (NULL != I_Control_Update) && (NULL != I_Get_Pos) )
+        {
+
+            fRunTimeLinkSuccess = TRUE;
+            cout << "Starting Control Loop" << endl;
+            float x_pos_arr[number_of_segments];
+            float y_pos_arr[number_of_segments];
+            for (uint16_t i = 0; i < 100; i++)
+            {
+                tstart = std::chrono::system_clock::now();
+                I_Control_Update();
+                tend = std::chrono::system_clock::now();
+                elapsed_seconds = tend - tstart;
+                cout << "Update Time : " << (float)elapsed_seconds.count() << endl;
+
+                I_Get_Pos(x_pos_arr, y_pos_arr);
+                cout << " End Effector Pos (x,y) :" << x_pos_arr[number_of_segments] << ", " << y_pos_arr[number_of_segments] << ")" << endl;
+                //cout << " End Effector Pos (x,y) :" << x_pos_arr << ", " << y_pos_arr << ")" << endl;
+            }
+            cout << "Update Time2 : " << (float)elapsed_seconds.count() << endl;
+
+            
+        }
+
         
         // Free the DLL module.
 

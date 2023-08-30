@@ -40,8 +40,8 @@ private:
 	torch::Tensor joint_lengths;
 	torch::Tensor x_pos;
 	torch::Tensor y_pos;
-	torch::Tensor x_targ;
-	torch::Tensor y_targ;
+	torch::Tensor x_target;
+	torch::Tensor y_target;
 	torch::Tensor dx;
 	torch::Tensor dy;
 	torch::Tensor weights;
@@ -50,15 +50,17 @@ private:
 
 public:
 	// Constructor
-	PlanarArm(uint16_t n_seg);
+	PlanarArm();
 
 	// Class Functions
-	void Init(void);
+	void Init(uint16_t n_seg);
 	void forward_kinematics(void);
 	void update_angle(torch::Tensor dtheta);
 	void get_residual(void);
 	void compute_jacobian(void);
 	void control_update(void);
+	void set_target(float x_targ, float y_targ);
+	torch::Tensor get_positions(void);
 
 
 };

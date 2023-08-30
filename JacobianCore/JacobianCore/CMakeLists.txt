@@ -4,9 +4,14 @@
 cmake_minimum_required (VERSION 3.8)
 
 find_package(Torch REQUIRED)
+
+# Set optimization level
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
 add_compile_definitions(EXPORT_LIB)
 # Add source to this project's library
-add_library(JacobianCore SHARED JacobianCore.cpp 
+add_library(JacobianCore SHARED JacobianCore.cpp
                                 JacobianCore.h
                                 J_Interface.cpp
                                 J_Interface.h
